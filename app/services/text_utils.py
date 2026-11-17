@@ -29,6 +29,8 @@ STOPWORDS = frozenset(
     song songs album albums track tracks edition volume author written writer director directed star
     stars starring life lives world time times day days man men woman women young old bestselling
     acclaimed award winning bestseller classic must-read
+    travels travel mysterious dangerous secret secrets control against forms beloved famous opening title
+    begins begin follows follow tells tell including whose era home
     """.split()
 )
 

@@ -43,7 +43,8 @@ async def read_item_form(request: Request) -> ItemFormData:
     for name in ITEM_TEXT_FIELDS:
         raw = form.get(name)
         values[name] = raw if isinstance(raw, str) else ""
-    values["is_favourite"] = form.get("is_favourite") is not None
+    favourite = form.get("is_favourite")
+    values["is_favourite"] = isinstance(favourite, str) and favourite.strip().lower() in {"1", "true", "on", "yes"}
     collection_ids = [int(v) for v in form.getlist("collection_ids") if isinstance(v, str) and v.isdigit()]
     return ItemFormData(values=values, collection_ids=collection_ids)
 
