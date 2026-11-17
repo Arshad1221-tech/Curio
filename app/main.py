@@ -17,7 +17,7 @@ from app import __version__
 from app.config import STATIC_DIR, get_settings
 from app.core.errors import register_exception_handlers
 from app.database import init_db
-from app.routers import auth, collections, items, metadata, pages, profile
+from app.routers import auth, collections, items, metadata, pages, profile, recommendations
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s [%(name)s] %(message)s")
 
@@ -31,6 +31,8 @@ ROUTERS = [
     collections.router,
     collections.api_router,
     metadata.router,
+    recommendations.router,
+    recommendations.api_router,
 ]
 
 

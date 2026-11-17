@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui with context %}
+
+{% block title %}Discover · {{ app_name }}{% endblock %}
+
+{% block content %}
+{% set next_url = request.url.path ~ ('?' ~ request.url.query if request.url.query else '') %}
+
+<div class="page-header">
+  <p class="eyebrow mb-1">Discover what’s next</p>
+  <h1>Recommended for you</h1>
+  <p class="lead">Suggestions ranked by how closely they match the genres, creators, tags and themes you rate highly.</p>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-8">
+    <div class="curio-card curio-card-body h-100">
+      {% if result.cold_start %}
+      <h2 class="h5 mb-2"><i class="bi bi-lightbulb me-2 text-warning"></i>Let’s get to know your taste</h2>
+      <p class="text-muted mb-3">
+        {% if result.library_size == 0 %}Your library is empty, so here are some well-loved starter picks.
+        {% else %}You have {{ result.library_size }} item{{ 's' if result.library_size != 1 }} so far — add a few more and rate them to unlock personalised suggestions.{% endif %}
+        Every item you add, rate, tag or favourite sharpens your recommendations.
+      </p>
+      <a class="btn btn-primary btn-sm" href="/items/new"><i class="bi bi-plus-lg me-1"></i>Add something you love</a>
+      {% else %}
+      <h2 class="h5 mb-2"><i class="bi bi-person-heart me-2 text-danger"></i>Your taste profile</h2>
+      <p class="text-muted mb-3">Built from the {{ result.library_size }} item{{ 's' if result.library_size != 1 }} in your library. Favourites and high ratings count the most.</p>
+      {% if result.preferences %}
+      <div class="d-flex flex-wrap gap-2">
+        {% for kind, label in result.preferences %}
+        <span class="tag-pill {{ 'genre-pill' if kind == 'genre' }}">
+          <i class="bi {{ {'genre': 'bi-bookmark', 'creator': 'bi-person', 'tag': 'bi-tag'}[kind] }}"></i>{{ label }}
+        </span>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <form class="curio-card curio-card-body h-100" method="get" action="/recommendations" data-autosubmit>
+      {% if selected_type %}<input type="hidden" name="type" value="{{ selected_type }}">{% endif %}
+      <h2 class="h6 mb-2">Search beyond the catalogue</h2>
+      <div class="form-check form-switch mb-2">
+        <input class="form-check-input" type="checkbox" role="switch" id="online" name="online" value="1" {{ 'checked' if online }}>
+        <label class="form-check-label" for="online">Include online suggestions</label>
+      </div>
+      <p class="small text-muted mb-0">
+        Adds popular titles from Google Books, iTunes{{ ' and TMDB' if tmdb_enabled else '' }} for your favourite genres.
+        {% if not tmdb_enabled %}Add a TMDB key to include movies and TV.{% endif %}
+      </p>
+      <noscript><button class="btn btn-sm btn-light-subtle mt-2" type="submit">Apply</button></noscript>
+    </form>
+  </div>
+</div>
+
+{% if result.online_errors %}
+<div class="alert alert-warning d-flex gap-2" role="alert">
+  <i class="bi bi-exclamation-triangle mt-1"></i>
+  <div>Some online suggestions couldn't be loaded: {{ result.online_errors|join(' ') }} Showing catalogue and community picks instead.</div>
+</div>
+{% endif %}
+
+<nav class="type-chips mb-4" aria-label="Filter recommendations by type">
+  <a class="type-chip {{ 'active' if not selected_type }}" href="{{ query_string(query, type='') or '/recommendations' }}"><i class="bi bi-grid"></i>Everything</a>
+  {% for key, meta in MEDIA_TYPES.items() if key != 'other' %}
+  <a class="type-chip {{ 'active' if selected_type == key }}" href="{{ query_string(query, type=key) }}"><i class="bi {{ meta.icon }}"></i>{{ meta.plural }}</a>
+  {% endfor %}
+</nav>
+
+{% if result.recommendations %}
+<div class="item-grid">
+  {% for rec in result.recommendations %}{% include "partials/_recommendation_card.html" %}{% endfor %}
+</div>
+{% else %}
+  {% if selected_type %}
+  {{ ui.empty_state("bi-compass", "No " ~ media_meta(selected_type).plural|lower ~ " to suggest yet",
+     "Save and rate a few " ~ media_meta(selected_type).plural|lower ~ " — or switch on online suggestions — to see matches here.",
+     "/items/new?type=" ~ selected_type, "Add " ~ media_meta(selected_type).label|lower, "/recommendations", "Show everything") }}
+  {% else %}
+  {{ ui.empty_state("bi-compass", "No new suggestions right now",
+     "You already own most of what matches your taste in the catalogue. Switch on online suggestions to search further, or add and rate more items.",
+     "/items/new", "Add an item") }}
+  {% endif %}
+{% endif %}
+{% endblock %}

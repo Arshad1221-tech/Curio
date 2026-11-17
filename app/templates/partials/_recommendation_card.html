@@ -1,0 +1,45 @@
+{# Recommendation card. Expects: rec (Recommendation), next_url (str) #}
+{% import "partials/_macros.html" as ui with context %}
+{% set c = rec.item %}
+<article class="item-card">
+  <div class="position-relative">
+    {{ ui.cover(c) }}
+    {% if rec.match_percent %}<span class="match-badge" title="Relative match compared with your other suggestions">{{ rec.match_percent }}% match</span>{% endif %}
+  </div>
+  <span class="item-type-badge"><i class="bi {{ media_meta(c.media_type).icon }} me-1"></i>{{ media_meta(c.media_type).label }}</span>
+  <div class="item-card-body">
+    <h3 class="item-card-title">{{ c.title }}</h3>
+    <div class="item-card-meta text-truncate">
+      {{ c.creator or '' }}{% if c.creator and c.release_year %} · {% endif %}{{ c.release_year or '' }}
+    </div>
+    {% if rec.reasons %}
+    <ul class="reason-list">
+      {% for reason in rec.reasons %}<li><i class="bi bi-stars"></i><span>{{ reason }}</span></li>{% endfor %}
+    </ul>
+    {% endif %}
+    <div class="small text-muted mt-2">
+      {% if c.origin == 'online' %}<i class="bi bi-cloud me-1"></i>From {{ EXTERNAL_SOURCES.get(c.source, c.source) }}
+      {% elif c.origin == 'community' %}<i class="bi bi-people me-1"></i>Shared by the community
+      {% else %}<i class="bi bi-bookmark-star me-1"></i>From the {{ app_name }} catalogue{% endif %}
+    </div>
+    <form method="post" action="/recommendations/save" class="mt-2">
+      {{ ui.csrf_field() }}
+      <input type="hidden" name="next" value="{{ next_url }}">
+      <input type="hidden" name="media_type" value="{{ c.media_type }}">
+      <input type="hidden" name="title" value="{{ c.title }}">
+      <input type="hidden" name="creator" value="{{ c.creator or '' }}">
+      <input type="hidden" name="release_year" value="{{ c.release_year or '' }}">
+      <input type="hidden" name="description" value="{{ c.description or '' }}">
+      <input type="hidden" name="genres" value="{{ c.genres|join(',') }}">
+      <input type="hidden" name="keywords" value="{{ c.keywords|join(',') }}">
+      <input type="hidden" name="image_url" value="{{ c.image_url or '' }}">
+      <input type="hidden" name="external_source" value="{{ c.source if c.source in EXTERNAL_SOURCES else 'manual' }}">
+      <input type="hidden" name="external_id" value="{{ c.external_id or '' }}">
+      <input type="hidden" name="external_url" value="{{ c.external_url or '' }}">
+      <button class="btn btn-sm btn-outline-primary w-100" type="submit"><i class="bi bi-bookmark-plus me-1"></i>Add to wishlist</button>
+    </form>
+    {% if c.external_url %}
+    <a class="small mt-2 d-inline-block" href="{{ c.external_url }}" target="_blank" rel="noopener noreferrer">View details <i class="bi bi-box-arrow-up-right"></i></a>
+    {% endif %}
+  </div>
+</article>
