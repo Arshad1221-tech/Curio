@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui with context %}
+
+{% block title %}{{ collection.name }} by {{ owner_name }} · {{ app_name }}{% endblock %}
+{% block head %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+
+{% block content %}
+<section class="shared-hero mb-4">
+  <p class="eyebrow mb-2" style="color: var(--curio-amber)"><i class="bi bi-globe2 me-1"></i>Shared collection</p>
+  <h1 class="display-6 mb-2">{{ collection.name }}</h1>
+  {% if collection.description %}<p class="fs-5 opacity-75 mb-3">{{ collection.description }}</p>{% endif %}
+  <div class="d-flex flex-wrap align-items-center gap-3">
+    <span class="d-inline-flex align-items-center gap-2">
+      <span class="avatar">{{ collection.owner.initials }}</span>
+      <span>Curated by <strong>{{ owner_name }}</strong></span>
+    </span>
+    <span class="opacity-75">{{ items|length }} item{{ 's' if items|length != 1 }}</span>
+    <a class="btn btn-accent btn-sm ms-md-auto" href="/shared/{{ token }}/export.pdf"><i class="bi bi-file-earmark-pdf me-1"></i>Download PDF</a>
+  </div>
+</section>
+
+{% if items %}
+<div class="item-grid">
+  {% set readonly = True %}
+  {% for item in items %}{% include "partials/_item_card.html" %}{% endfor %}
+</div>
+{% else %}
+  {{ ui.empty_state("bi-folder2-open", "Nothing here yet", "This collection doesn't have any items yet. Check back soon!") }}
+{% endif %}
+
+{% if not user %}
+<div class="cta-band text-center mt-5">
+  <h2 class="h3 mb-2">Start your own collection on {{ app_name }}</h2>
+  <p class="fst-italic opacity-75 mb-4">{{ tagline }}</p>
+  <a class="btn btn-accent" href="/register">Create a free account</a>
+</div>
+{% endif %}
+{% endblock %}
