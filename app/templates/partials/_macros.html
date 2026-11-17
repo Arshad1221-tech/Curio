@@ -1,0 +1,80 @@
+{# Reusable UI macros. Import with: {% import "partials/_macros.html" as ui with context %} #}
+
+{% macro csrf_field() -%}
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+{%- endmacro %}
+
+{% macro invalid(errors, name) -%}
+{% if errors and errors.get(name) %} is-invalid{% endif %}
+{%- endmacro %}
+
+{% macro field_error(errors, name) -%}
+{% if errors and errors.get(name) %}<div class="invalid-feedback d-block">{{ errors[name] }}</div>{% endif %}
+{%- endmacro %}
+
+{% macro form_errors(errors) -%}
+{% if errors and errors.get("__all__") %}
+<div class="alert alert-danger d-flex gap-2" role="alert"><i class="bi bi-exclamation-octagon mt-1"></i><div>{{ errors["__all__"] }}</div></div>
+{% elif errors %}
+<div class="alert alert-danger d-flex gap-2" role="alert"><i class="bi bi-exclamation-octagon mt-1"></i><div>Please correct the highlighted fields below.</div></div>
+{% endif %}
+{%- endmacro %}
+
+{% macro cover(obj, mini=False) -%}
+{% set mtype = obj.media_type or "other" %}
+<div class="cover{% if mtype in SQUARE_ARTWORK_TYPES %} cover--square{% endif %}" data-type="{{ mtype }}">
+  <div class="cover-placeholder" aria-hidden="true">
+    <i class="bi {{ media_meta(mtype).icon }}"></i>
+    {% if not mini %}<span>{{ obj.title }}</span>{% endif %}
+  </div>
+  {% if obj.image_url %}
+  <img class="cover-img" src="{{ obj.image_url }}" alt="Cover of {{ obj.title }}" loading="lazy" referrerpolicy="no-referrer">
+  {% endif %}
+</div>
+{%- endmacro %}
+
+{% macro stars(rating, show_empty=False) -%}
+{% if rating %}
+<span class="stars" role="img" aria-label="Rated {{ rating }} out of 5">{% for i in range(1, 6) %}<i class="bi {{ 'bi-star-fill' if i <= rating else 'bi-star' }}"></i>{% endfor %}</span>
+{% elif show_empty %}
+<span class="small text-muted">Not rated</span>
+{% endif %}
+{%- endmacro %}
+
+{% macro empty_state(icon, title, text, action_url=None, action_label=None, secondary_url=None, secondary_label=None) -%}
+<div class="curio-card empty-state">
+  <div class="empty-icon"><i class="bi {{ icon }}"></i></div>
+  <h2>{{ title }}</h2>
+  <p>{{ text }}</p>
+  {% if action_url or secondary_url %}
+  <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+    {% if action_url %}<a class="btn btn-primary" href="{{ action_url }}">{{ action_label }}</a>{% endif %}
+    {% if secondary_url %}<a class="btn btn-light-subtle" href="{{ secondary_url }}">{{ secondary_label }}</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+{%- endmacro %}
+
+{% macro pagination(page, pages, params) -%}
+{% if pages > 1 %}
+<nav aria-label="Pagination" class="mt-4">
+  <ul class="pagination justify-content-center flex-wrap">
+    <li class="page-item {{ 'disabled' if page <= 1 }}">
+      <a class="page-link" href="{{ query_string(params, page=page - 1) if page > 1 else '#' }}" aria-label="Previous page">&laquo;</a>
+    </li>
+    {% for p in range(1, pages + 1) %}
+      {% if p == 1 or p == pages or (p - page)|abs <= 2 %}
+      <li class="page-item {{ 'active' if p == page }}" {% if p == page %}aria-current="page"{% endif %}>
+        <a class="page-link" href="{{ query_string(params, page=p) }}">{{ p }}</a>
+      </li>
+      {% elif (p - page)|abs == 3 %}
+      <li class="page-item disabled"><span class="page-link">…</span></li>
+      {% endif %}
+    {% endfor %}
+    <li class="page-item {{ 'disabled' if page >= pages }}">
+      <a class="page-link" href="{{ query_string(params, page=page + 1) if page < pages else '#' }}" aria-label="Next page">&raquo;</a>
+    </li>
+  </ul>
+</nav>
+{% endif %}
+{%- endmacro %}

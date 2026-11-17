@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block main_class %}{% endblock %}
+{% block flash_class %}container pt-4{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <p class="eyebrow mb-3">Your personal interest library</p>
+        <h1 class="hero-title">{{ app_name }}</h1>
+        <p class="hero-tagline">{{ tagline }}</p>
+        <p class="hero-copy mb-4">
+          Keep the books, movies, TV shows, songs and albums you love in one beautiful place.
+          Rate them, tag them, organise them into collections — and let {{ app_name }} suggest what to enjoy next.
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+          {% if user %}
+          <a class="btn btn-primary btn-lg" href="/dashboard"><i class="bi bi-grid-1x2 me-2"></i>Go to your dashboard</a>
+          <a class="btn btn-light-subtle btn-lg" href="/recommendations">Discover something new</a>
+          {% else %}
+          <a class="btn btn-primary btn-lg" href="/register">Start your collection</a>
+          <a class="btn btn-light-subtle btn-lg" href="/login">I already have an account</a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-lg-6 d-none d-md-block">
+        <div class="shelf" aria-hidden="true">
+          <div class="shelf-card"><i class="bi bi-book"></i><div><small>Books</small><strong>Stories worth rereading</strong></div></div>
+          <div class="shelf-card"><i class="bi bi-film"></i><div><small>Movies</small><strong>Your film night shortlist</strong></div></div>
+          <div class="shelf-card"><i class="bi bi-tv"></i><div><small>TV Shows</small><strong>Series to binge next</strong></div></div>
+          <div class="shelf-card square"><i class="bi bi-music-note-beamed"></i><div><small>Songs</small><strong>On repeat</strong></div></div>
+          <div class="shelf-card square"><i class="bi bi-vinyl"></i><div><small>Albums</small><strong>Desert-island picks</strong></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container py-5">
+  <div class="text-center mb-5">
+    <p class="eyebrow">Everything in one place</p>
+    <h2 class="display-6">A home for every favourite</h2>
+  </div>
+  <div class="row g-4">
+    <div class="col-md-6 col-lg-3">
+      <div class="curio-card feature-card">
+        <div class="feature-icon"><i class="bi bi-collection"></i></div>
+        <h3 class="h5">Collect</h3>
+        <p class="text-muted mb-0">Add books, films, shows and music in seconds with covers and details from TMDB, Google Books and iTunes.</p>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <div class="curio-card feature-card">
+        <div class="feature-icon"><i class="bi bi-folder2-open"></i></div>
+        <h3 class="h5">Organise</h3>
+        <p class="text-muted mb-0">Create custom collections, add ratings, tags, favourites and personal notes, then search and filter instantly.</p>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <div class="curio-card feature-card">
+        <div class="feature-icon"><i class="bi bi-compass"></i></div>
+        <h3 class="h5">Discover</h3>
+        <p class="text-muted mb-0">Personalised recommendations based on the genres, tags, themes and ratings you care about most.</p>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+      <div class="curio-card feature-card">
+        <div class="feature-icon"><i class="bi bi-share"></i></div>
+        <h3 class="h5">Share</h3>
+        <p class="text-muted mb-0">Publish a collection with a private link, or export it as a polished PDF to keep or print.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container pb-5">
+  <div class="row g-4 align-items-center">
+    <div class="col-lg-5">
+      <p class="eyebrow">How it works</p>
+      <h2 class="display-6 mb-3">From “I loved that” to “what’s next?”</h2>
+      <p class="text-muted">{{ app_name }} learns from what you save. The more you rate and tag, the sharper your suggestions become.</p>
+    </div>
+    <div class="col-lg-7">
+      <div class="curio-card curio-card-body d-grid gap-4">
+        <div class="d-flex gap-3"><span class="step-number">1</span><div><h3 class="h6 mb-1">Save what you love</h3><p class="text-muted mb-0">Search for a title, pick the right match and {{ app_name }} fills in the details and artwork.</p></div></div>
+        <div class="d-flex gap-3"><span class="step-number">2</span><div><h3 class="h6 mb-1">Make it yours</h3><p class="text-muted mb-0">Rate it, mark it as a favourite, tag it and jot down why it mattered to you.</p></div></div>
+        <div class="d-flex gap-3"><span class="step-number">3</span><div><h3 class="h6 mb-1">Discover what’s next</h3><p class="text-muted mb-0">Get ranked recommendations with clear reasons — “because you enjoy Science Fiction and Mystery”.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container pb-5">
+  <div class="cta-band text-center">
+    <h2 class="display-6 mb-2">{{ app_name }}</h2>
+    <p class="fs-5 fst-italic mb-4 opacity-75">{{ tagline }}</p>
+    {% if user %}
+    <a class="btn btn-accent btn-lg" href="/items/new"><i class="bi bi-plus-lg me-2"></i>Add your next favourite</a>
+    {% else %}
+    <a class="btn btn-accent btn-lg" href="/register">Create your free account</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

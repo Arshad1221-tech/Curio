@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}{{ error_title }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6 text-center py-4">
+    <div class="error-code" aria-hidden="true">{{ status_code }}</div>
+    <h1 class="h2 mt-2">{{ error_title }}</h1>
+    <p class="text-muted fs-5">{{ error_message }}</p>
+    <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+      {% if user %}
+      <a class="btn btn-primary" href="/dashboard"><i class="bi bi-grid-1x2 me-2"></i>Back to dashboard</a>
+      <a class="btn btn-light-subtle" href="/items">Open your library</a>
+      {% else %}
+      <a class="btn btn-primary" href="/">Go to the home page</a>
+      <a class="btn btn-light-subtle" href="/login">Log in</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
