@@ -18,7 +18,7 @@ from app.core.templating import flash, redirect, render
 from app.database import get_db
 from app.models import Item, User
 from app.schemas.item import FavouriteOut, ItemIn, ItemOut
-from app.services import collection_service, item_service
+from app.services import collection_service, item_service, metadata_service
 from app.services.item_service import ItemFilters
 
 router = APIRouter(include_in_schema=False)
@@ -89,6 +89,7 @@ def _render_form(
         "collections": collection_service.list_collections(db, user),
         "selected_collections": set(selected_collections),
         "known_tags": [name for name, _ in item_service.tag_counts(db, user)],
+        "lookup_unavailable": [t for t, ok in metadata_service.lookup_availability().items() if not ok],
     }
     return render(request, "items/form.html", context, status_code)
 
