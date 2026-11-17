@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui with context %}
+
+{% block title %}Collections · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex flex-wrap justify-content-between align-items-end gap-3">
+  <div>
+    <h1>Collections</h1>
+    <p class="lead">Group your favourites into lists you can browse, share and export.</p>
+  </div>
+  <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#createCollectionModal">
+    <i class="bi bi-folder-plus me-1"></i>New collection
+  </button>
+</div>
+
+{% if collections %}
+<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-4">
+  {% for collection in collections %}
+  <div class="col">
+    <article class="curio-card collection-card">
+      {% set covers = collection.cover_images %}
+      <div class="collection-mosaic {{ 'single' if covers|length == 1 }}">
+        {% if covers %}
+          {% for url in covers %}<img src="{{ url }}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'">{% endfor %}
+        {% else %}
+          <div class="mosaic-empty"><i class="bi bi-folder2-open"></i></div>
+        {% endif %}
+      </div>
+      <div class="curio-card-body">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <h2 class="h5 mb-1"><a class="stretched-link text-reset text-decoration-none" href="/collections/{{ collection.id }}">{{ collection.name }}</a></h2>
+          {% if collection.is_shared %}<span class="badge rounded-pill text-bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-globe2 me-1"></i>Shared</span>{% endif %}
+        </div>
+        <p class="text-muted small mb-2">{{ collection.item_count }} item{{ 's' if collection.item_count != 1 }} · Updated {{ collection.updated_at|datefmt }}</p>
+        {% if collection.description %}<p class="mb-0 text-truncate-2">{{ collection.description }}</p>{% endif %}
+      </div>
+    </article>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+  <div class="curio-card empty-state">
+    <div class="empty-icon"><i class="bi bi-folder2-open"></i></div>
+    <h2>No collections yet</h2>
+    <p>Create collections like “All-time favourite films”, “To read this summer” or “Workout playlist” to keep your library organised.</p>
+    <button class="btn btn-primary mt-2" type="button" data-bs-toggle="modal" data-bs-target="#createCollectionModal">Create your first collection</button>
+  </div>
+{% endif %}
+
+<div class="modal fade" id="createCollectionModal" tabindex="-1" aria-labelledby="createCollectionTitle" aria-hidden="true"
+     {% if open_create %}data-open-on-load{% endif %}>
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" method="post" action="/collections" novalidate>
+      {{ ui.csrf_field() }}
+      <div class="modal-header border-0 pb-0">
+        <h2 class="modal-title h5" id="createCollectionTitle">New collection</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        {{ ui.form_errors(errors) }}
+        <div class="mb-3">
+          <label class="form-label" for="name">Name</label>
+          <input class="form-control{{ ui.invalid(errors, 'name') }}" id="name" name="name" type="text" maxlength="100" required
+                 value="{{ values.name or '' }}" placeholder="e.g. Cosy winter reads">
+          {{ ui.field_error(errors, 'name') }}
+        </div>
+        <div>
+          <label class="form-label" for="description">Description <span class="text-muted fw-normal">(optional)</span></label>
+          <textarea class="form-control{{ ui.invalid(errors, 'description') }}" id="description" name="description" rows="3"
+                    maxlength="1000">{{ values.description or '' }}</textarea>
+          {{ ui.field_error(errors, 'description') }}
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-light-subtle" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create collection</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

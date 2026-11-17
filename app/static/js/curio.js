@@ -94,7 +94,10 @@
         btn.setAttribute("aria-pressed", data.is_favourite ? "true" : "false");
         btn.setAttribute("title", data.is_favourite ? "Remove from favourites" : "Add to favourites");
         var icon = btn.querySelector("i");
-        if (icon) { icon.className = data.is_favourite ? "bi bi-heart-fill" : "bi bi-heart"; }
+        if (icon) {
+          icon.classList.toggle("bi-heart-fill", data.is_favourite);
+          icon.classList.toggle("bi-heart", !data.is_favourite);
+        }
         var label = btn.querySelector("[data-favourite-label]");
         if (label) { label.textContent = data.is_favourite ? "Favourited" : "Add to favourites"; }
       });
@@ -142,6 +145,23 @@
   document.querySelectorAll("[data-image-preview]").forEach(function (input) {
     input.addEventListener("input", function () { updatePreview(input); });
     updatePreview(input);
+  });
+
+  // Re-open a modal after a failed submission so validation errors are visible.
+  document.querySelectorAll(".modal[data-open-on-load]").forEach(function (modal) {
+    if (window.bootstrap) { window.bootstrap.Modal.getOrCreateInstance(modal).show(); }
+  });
+
+  // Instant client-side filtering: <input data-filter-list="#list"> + children with data-filter-text
+  document.querySelectorAll("[data-filter-list]").forEach(function (input) {
+    var list = document.querySelector(input.getAttribute("data-filter-list"));
+    if (!list) { return; }
+    input.addEventListener("input", function () {
+      var term = input.value.trim().toLowerCase();
+      list.querySelectorAll("[data-filter-text]").forEach(function (row) {
+        row.classList.toggle("d-none", term !== "" && row.getAttribute("data-filter-text").indexOf(term) === -1);
+      });
+    });
   });
 
   // Client-side "clear rating" link for the star input.

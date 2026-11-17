@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui with context %}
+
+{% block title %}{{ collection.name }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb small">
+    <li class="breadcrumb-item"><a href="/collections">Collections</a></li>
+    <li class="breadcrumb-item active text-truncate" aria-current="page">{{ collection.name }}</li>
+  </ol>
+</nav>
+
+<div class="page-header d-flex flex-wrap justify-content-between align-items-start gap-3">
+  <div class="min-w-0">
+    <h1 class="d-flex align-items-center gap-2 flex-wrap">
+      {{ collection.name }}
+      {% if collection.is_shared %}<span class="badge rounded-pill text-bg-warning-subtle text-warning-emphasis border border-warning-subtle fs-6 fw-medium"><i class="bi bi-globe2 me-1"></i>Shared</span>{% endif %}
+    </h1>
+    {% if collection.description %}<p class="lead">{{ collection.description }}</p>{% endif %}
+    <p class="text-muted small mb-0">{{ collection.item_count }} item{{ 's' if collection.item_count != 1 }} · Created {{ collection.created_at|datefmt }}</p>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#addItemsModal"><i class="bi bi-plus-lg me-1"></i>Add items</button>
+    {# export-button #}
+    <button class="btn btn-light-subtle" type="button" data-bs-toggle="modal" data-bs-target="#editCollectionModal"><i class="bi bi-pencil me-1"></i>Edit</button>
+    <form method="post" action="/collections/{{ collection.id }}/delete"
+          data-confirm="Delete the collection “{{ collection.name }}”? Items will stay in your library.">
+      {{ ui.csrf_field() }}
+      <button class="btn btn-outline-danger" type="submit"><i class="bi bi-trash me-1"></i>Delete</button>
+    </form>
+  </div>
+</div>
+
+{# sharing-panel #}
+
+{% if collection.item_count %}
+<form class="d-flex flex-wrap gap-2 align-items-center mb-4" method="get" data-autosubmit aria-label="Filter collection">
+  <label class="visually-hidden" for="type">Type</label>
+  <select class="form-select w-auto" id="type" name="type">
+    <option value="">All types</option>
+    {% for key, meta in MEDIA_TYPES.items() %}<option value="{{ key }}" {{ 'selected' if filters.media_type == key }}>{{ meta.plural }}</option>{% endfor %}
+  </select>
+  <label class="visually-hidden" for="sort">Sort</label>
+  <select class="form-select w-auto" id="sort" name="sort">
+    {% for key, label in SORT_OPTIONS.items() %}<option value="{{ key }}" {{ 'selected' if filters.sort == key }}>{{ label }}</option>{% endfor %}
+  </select>
+  <noscript><button class="btn btn-light-subtle" type="submit">Apply</button></noscript>
+</form>
+
+  {% if result.items %}
+  <div class="item-grid">
+    {% set remove_from = collection %}
+    {% for item in result.items %}{% include "partials/_item_card.html" %}{% endfor %}
+  </div>
+  {{ ui.pagination(result.page, result.pages, query) }}
+  {% else %}
+  {{ ui.empty_state("bi-funnel", "Nothing of this type here", "Try another type filter.", "/collections/" ~ collection.id, "Show everything") }}
+  {% endif %}
+{% else %}
+  {{ ui.empty_state("bi-folder2-open", "This collection is empty",
+     "Add items from your library, or create a new item that goes straight into this collection.",
+     "/items/new?collection=" ~ collection.id, "Add a new item") }}
+{% endif %}
+
+{# Add items modal #}
+<div class="modal fade" id="addItemsModal" tabindex="-1" aria-labelledby="addItemsTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+    <form class="modal-content" method="post" action="/collections/{{ collection.id }}/items">
+      {{ ui.csrf_field() }}
+      <div class="modal-header">
+        <h2 class="modal-title h5" id="addItemsTitle">Add items to “{{ collection.name }}”</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        {% if available_items %}
+        <input class="form-control mb-3" type="search" placeholder="Filter your library…" aria-label="Filter items" data-filter-list="#available-items">
+        <div id="available-items" class="d-grid gap-2">
+          {% for candidate in available_items %}
+          <label class="lookup-result" data-filter-text="{{ (candidate.title ~ ' ' ~ (candidate.creator or ''))|lower }}">
+            <input class="form-check-input flex-shrink-0 m-0" type="checkbox" name="item_ids" value="{{ candidate.id }}">
+            <div style="width: 2.6rem" class="flex-shrink-0">{{ ui.cover(candidate, mini=True) }}</div>
+            <div class="min-w-0">
+              <div class="fw-semibold text-truncate">{{ candidate.title }}</div>
+              <div class="small text-muted text-truncate">{{ candidate.media_label }}{% if candidate.creator %} · {{ candidate.creator }}{% endif %}</div>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">Every item in your library is already in this collection. <a href="/items/new?collection={{ collection.id }}">Add a new item</a>.</p>
+        {% endif %}
+      </div>
+      <div class="modal-footer">
+        <a class="btn btn-light-subtle me-auto" href="/items/new?collection={{ collection.id }}">Create new item</a>
+        <button type="button" class="btn btn-light-subtle" data-bs-dismiss="modal">Cancel</button>
+        {% if available_items %}<button type="submit" class="btn btn-primary">Add selected</button>{% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+{# Edit collection modal #}
+<div class="modal fade" id="editCollectionModal" tabindex="-1" aria-labelledby="editCollectionTitle" aria-hidden="true"
+     {% if open_edit %}data-open-on-load{% endif %}>
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" method="post" action="/collections/{{ collection.id }}/edit" novalidate>
+      {{ ui.csrf_field() }}
+      <div class="modal-header border-0 pb-0">
+        <h2 class="modal-title h5" id="editCollectionTitle">Edit collection</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        {{ ui.form_errors(errors) }}
+        <div class="mb-3">
+          <label class="form-label" for="edit-name">Name</label>
+          <input class="form-control{{ ui.invalid(errors, 'name') }}" id="edit-name" name="name" type="text" maxlength="100" required value="{{ values.name }}">
+          {{ ui.field_error(errors, 'name') }}
+        </div>
+        <div>
+          <label class="form-label" for="edit-description">Description</label>
+          <textarea class="form-control{{ ui.invalid(errors, 'description') }}" id="edit-description" name="description" rows="3" maxlength="1000">{{ values.description }}</textarea>
+          {{ ui.field_error(errors, 'description') }}
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-light-subtle" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

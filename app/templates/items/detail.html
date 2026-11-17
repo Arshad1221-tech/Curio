@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui with context %}
+
+{% block title %}{{ item.title }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb small">
+    <li class="breadcrumb-item"><a href="/items">Library</a></li>
+    <li class="breadcrumb-item"><a href="/items?type={{ item.media_type }}">{{ media_meta(item.media_type).plural }}</a></li>
+    <li class="breadcrumb-item active text-truncate" aria-current="page">{{ item.title }}</li>
+  </ol>
+</nav>
+
+<div class="row g-4 g-lg-5">
+  <div class="col-md-5 col-lg-4">
+    <div class="detail-cover">{{ ui.cover(item) }}</div>
+    <div class="d-grid gap-2 mt-4" style="max-width: 320px; margin-inline: auto;">
+      <button type="button" class="btn btn-light-subtle fav-inline {{ 'is-active' if item.is_favourite }}" data-favourite-toggle
+              data-item-id="{{ item.id }}" aria-pressed="{{ 'true' if item.is_favourite else 'false' }}">
+        <i class="bi {{ 'bi-heart-fill' if item.is_favourite else 'bi-heart' }} text-danger me-1"></i>
+        <span data-favourite-label>{{ 'Favourited' if item.is_favourite else 'Add to favourites' }}</span>
+      </button>
+      <a class="btn btn-primary" href="/items/{{ item.id }}/edit"><i class="bi bi-pencil me-1"></i>Edit item</a>
+      <form method="post" action="/items/{{ item.id }}/delete" data-confirm="Remove “{{ item.title }}” from your library? This cannot be undone.">
+        {{ ui.csrf_field() }}
+        <button class="btn btn-outline-danger w-100" type="submit"><i class="bi bi-trash me-1"></i>Delete</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-md-7 col-lg-8">
+    <p class="eyebrow mb-2"><i class="bi {{ item.media_icon }} me-1"></i>{{ item.media_label }} · {{ item.status_label }}</p>
+    <h1 class="display-6 mb-1">{{ item.title }}</h1>
+    <p class="fs-5 text-muted mb-3">
+      {% if item.creator %}{{ item.creator }}{% endif %}{% if item.creator and item.release_year %} · {% endif %}{{ item.release_year or '' }}
+    </p>
+    <div class="mb-4">{{ ui.stars(item.rating, show_empty=True) }}</div>
+
+    {% if item.genre_list %}
+    <div class="d-flex flex-wrap gap-2 mb-3" aria-label="Genres">
+      {% for genre in item.genre_list %}<a class="tag-pill genre-pill" href="/items?genre={{ genre|urlencode }}">{{ genre }}</a>{% endfor %}
+    </div>
+    {% endif %}
+    {% if item.tags %}
+    <div class="d-flex flex-wrap gap-2 mb-4" aria-label="Tags">
+      {% for tag in item.tags %}<a class="tag-pill" href="/items?tag={{ tag.name|urlencode }}">#{{ tag.name }}</a>{% endfor %}
+    </div>
+    {% endif %}
+
+    {% if item.description %}
+    <section class="mb-4">
+      <h2 class="h5">About</h2>
+      <p class="mb-0" style="white-space: pre-line">{{ item.description }}</p>
+    </section>
+    {% endif %}
+
+    {% if item.notes %}
+    <section class="mb-4">
+      <h2 class="h5">Your notes</h2>
+      <div class="notes-block">{{ item.notes }}</div>
+    </section>
+    {% endif %}
+
+    <section class="curio-card curio-card-body mb-4">
+      <h2 class="h5 mb-3">Details</h2>
+      <dl class="meta-list">
+        <dt>Type</dt><dd>{{ item.media_label }}</dd>
+        {% if item.creator %}<dt>{{ item.creator_label }}</dt><dd>{{ item.creator }}</dd>{% endif %}
+        {% if item.release_year %}<dt>Year</dt><dd>{{ item.release_year }}</dd>{% endif %}
+        <dt>Status</dt><dd>{{ item.status_label }}</dd>
+        <dt>Added</dt><dd>{{ item.created_at|datefmt }}</dd>
+        {% if item.updated_at and item.updated_at.date() != item.created_at.date() %}<dt>Updated</dt><dd>{{ item.updated_at|datefmt }}</dd>{% endif %}
+        <dt>Source</dt>
+        <dd>
+          {{ EXTERNAL_SOURCES.get(item.external_source, item.external_source) }}
+          {% if item.external_url %} · <a href="{{ item.external_url }}" target="_blank" rel="noopener noreferrer">View online <i class="bi bi-box-arrow-up-right small"></i></a>{% endif %}
+        </dd>
+      </dl>
+    </section>
+
+    <section class="curio-card curio-card-body" aria-labelledby="item-collections-heading">
+      <h2 id="item-collections-heading" class="h5 mb-3">In your collections</h2>
+      {% if collections %}
+      <form method="post" action="/items/{{ item.id }}/collections">
+        {{ ui.csrf_field() }}
+        <div class="row row-cols-1 row-cols-sm-2 g-2 mb-3">
+          {% for collection in collections %}
+          <div class="col">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="collection_ids" value="{{ collection.id }}" id="detail-col-{{ collection.id }}"
+                     {{ 'checked' if collection.id in member_ids }}>
+              <label class="form-check-label" for="detail-col-{{ collection.id }}">{{ collection.name }}</label>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <button class="btn btn-sm btn-outline-primary" type="submit">Update collections</button>
+      </form>
+      {% else %}
+      <p class="text-muted mb-2">Group your items into collections like “Summer reads” or “Road trip playlist”.</p>
+      <a class="btn btn-sm btn-outline-primary" href="/collections">Create a collection</a>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

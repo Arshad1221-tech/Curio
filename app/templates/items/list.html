@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui with context %}
+
+{% block title %}Your library · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex flex-wrap justify-content-between align-items-end gap-3">
+  <div>
+    <h1>Your library</h1>
+    <p class="lead">{{ library_total }} item{{ 's' if library_total != 1 }} across books, films, shows and music.</p>
+  </div>
+  <div class="d-flex gap-2">
+    {% if library_total %}<a class="btn btn-light-subtle" href="/export/library.pdf"><i class="bi bi-file-earmark-pdf me-1"></i>Export PDF</a>{% endif %}
+    <a class="btn btn-primary" href="/items/new{{ '?type=' ~ filters.media_type if filters.media_type }}"><i class="bi bi-plus-lg me-1"></i>Add item</a>
+  </div>
+</div>
+
+{% if library_total == 0 %}
+  {{ ui.empty_state("bi-collection", "Your library is empty",
+     "Start with something you love — a favourite book, a film you rewatch, a song on repeat. Curio can fill in the details for you.",
+     "/items/new", "Add your first item", "/recommendations", "Browse suggestions") }}
+{% else %}
+
+<nav class="type-chips mb-3" aria-label="Filter by type">
+  <a class="type-chip {{ 'active' if not filters.media_type }}" href="{{ query_string(query, type='', page='') or '/items' }}">
+    <i class="bi bi-grid"></i>All <span class="count">{{ library_total }}</span>
+  </a>
+  {% for key, meta in MEDIA_TYPES.items() %}
+    {% if type_counts[key] %}
+    <a class="type-chip {{ 'active' if filters.media_type == key }}" href="{{ query_string(query, type=key) }}">
+      <i class="bi {{ meta.icon }}"></i>{{ meta.plural }} <span class="count">{{ type_counts[key] }}</span>
+    </a>
+    {% endif %}
+  {% endfor %}
+</nav>
+
+<form class="curio-card filter-bar mb-4" method="get" action="/items" data-autosubmit role="search" aria-label="Search and filter your library">
+  {% if filters.media_type %}<input type="hidden" name="type" value="{{ filters.media_type }}">{% endif %}
+  <div class="row g-2 align-items-center">
+    <div class="col-12 col-lg-4">
+      <label class="visually-hidden" for="q">Search</label>
+      <div class="input-group">
+        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+        <input class="form-control border-start-0" id="q" name="q" type="search" value="{{ filters.q }}"
+               placeholder="Search titles, creators, notes, tags…" maxlength="100">
+      </div>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <label class="visually-hidden" for="genre">Genre</label>
+      <select class="form-select" id="genre" name="genre">
+        <option value="">All genres</option>
+        {% for name, count in genres %}
+        <option value="{{ name }}" {{ 'selected' if filters.genre|lower == name|lower }}>{{ name }} ({{ count }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <label class="visually-hidden" for="tag">Tag</label>
+      <select class="form-select" id="tag" name="tag">
+        <option value="">All tags</option>
+        {% for name, count in tags %}
+        <option value="{{ name }}" {{ 'selected' if filters.tag == name }}>#{{ name }} ({{ count }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <label class="visually-hidden" for="status">Status</label>
+      <select class="form-select" id="status" name="status">
+        <option value="">Any status</option>
+        {% for key, label in STATUSES.items() %}
+        <option value="{{ key }}" {{ 'selected' if filters.status == key }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-4 col-lg-2">
+      <label class="visually-hidden" for="sort">Sort by</label>
+      <select class="form-select" id="sort" name="sort">
+        {% for key, label in SORT_OPTIONS.items() %}
+        <option value="{{ key }}" {{ 'selected' if filters.sort == key }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <label class="visually-hidden" for="rating">Minimum rating</label>
+      <select class="form-select" id="rating" name="rating">
+        <option value="">Any rating</option>
+        {% for r in [5, 4, 3, 2, 1] %}
+        <option value="{{ r }}" {{ 'selected' if filters.min_rating == r }}>{{ r }}★{{ ' & up' if r < 5 }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-md-4 col-lg-3">
+      <div class="form-check form-switch mb-0 ms-1">
+        <input class="form-check-input" type="checkbox" role="switch" id="favourites" name="favourites" value="1" {{ 'checked' if filters.favourites_only }}>
+        <label class="form-check-label" for="favourites"><i class="bi bi-heart-fill text-danger me-1"></i>Favourites only</label>
+      </div>
+    </div>
+    <div class="col-12 col-lg-6 d-flex gap-2 justify-content-lg-end">
+      <button class="btn btn-primary" type="submit"><i class="bi bi-funnel me-1"></i>Apply</button>
+      {% if filters.has_filters or filters.sort != 'recent' %}<a class="btn btn-light-subtle" href="/items">Clear all</a>{% endif %}
+    </div>
+  </div>
+</form>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <p class="text-muted mb-0" aria-live="polite">
+    {% if filters.has_filters %}{{ result.total }} matching item{{ 's' if result.total != 1 }}{% else %}Showing {{ result.items|length }} of {{ result.total }}{% endif %}
+  </p>
+</div>
+
+{% if result.items %}
+<div class="item-grid">
+  {% for item in result.items %}{% include "partials/_item_card.html" %}{% endfor %}
+</div>
+{{ ui.pagination(result.page, result.pages, query) }}
+{% else %}
+  {{ ui.empty_state("bi-search", "No items match your filters",
+     "Try a different search term or remove a filter to see more of your library.", "/items", "Clear filters") }}
+{% endif %}
+{% endif %}
+{% endblock %}

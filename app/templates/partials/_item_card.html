@@ -1,0 +1,39 @@
+{#
+  Item card.
+  Expects: item
+  Optional: readonly (bool)  - public/shared pages: no links or buttons
+            remove_from (Collection) - shows a "remove from collection" button
+#}
+{% import "partials/_macros.html" as ui with context %}
+<article class="item-card">
+  {{ ui.cover(item) }}
+  <span class="item-type-badge"><i class="bi {{ item.media_icon }} me-1"></i>{{ item.media_label }}</span>
+  {% if not readonly %}
+  <button type="button" class="fav-toggle {{ 'is-active' if item.is_favourite }}" data-favourite-toggle
+          data-item-id="{{ item.id }}" aria-pressed="{{ 'true' if item.is_favourite else 'false' }}"
+          title="{{ 'Remove from favourites' if item.is_favourite else 'Add to favourites' }}">
+    <i class="bi {{ 'bi-heart-fill' if item.is_favourite else 'bi-heart' }}"></i>
+    <span class="visually-hidden">Toggle favourite for {{ item.title }}</span>
+  </button>
+  {% elif item.is_favourite %}
+  <span class="fav-toggle is-active" title="Favourite"><i class="bi bi-heart-fill"></i><span class="visually-hidden">Favourite</span></span>
+  {% endif %}
+  <div class="item-card-body">
+    <h3 class="item-card-title">
+      {% if readonly %}{{ item.title }}{% else %}<a class="stretched-link text-reset text-decoration-none" href="/items/{{ item.id }}">{{ item.title }}</a>{% endif %}
+    </h3>
+    <div class="item-card-meta text-truncate">
+      {{ item.creator or '' }}{% if item.creator and item.release_year %} · {% endif %}{{ item.release_year or '' }}
+    </div>
+    <div class="item-card-footer">
+      {{ ui.stars(item.rating) }}
+      {% if item.status != 'completed' %}<span class="badge rounded-pill text-bg-light border small fw-medium">{{ item.status_label }}</span>{% endif %}
+    </div>
+    {% if remove_from %}
+    <form method="post" action="/collections/{{ remove_from.id }}/items/{{ item.id }}/remove" class="position-relative mt-2" style="z-index: 2">
+      {{ ui.csrf_field() }}
+      <button class="btn btn-sm btn-light-subtle w-100" type="submit"><i class="bi bi-dash-circle me-1"></i>Remove</button>
+    </form>
+    {% endif %}
+  </div>
+</article>

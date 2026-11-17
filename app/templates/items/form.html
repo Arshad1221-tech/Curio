@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui with context %}
+
+{% block title %}{{ 'Edit ' ~ item.title if editing else 'Add an item' }} · {{ app_name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb small">
+    <li class="breadcrumb-item"><a href="/items">Library</a></li>
+    {% if editing %}<li class="breadcrumb-item"><a href="/items/{{ item.id }}">{{ item.title }}</a></li>{% endif %}
+    <li class="breadcrumb-item active" aria-current="page">{{ 'Edit' if editing else 'Add item' }}</li>
+  </ol>
+</nav>
+
+<div class="page-header">
+  <h1>{{ 'Edit “' ~ item.title ~ '”' if editing else 'Add something you love' }}</h1>
+  <p class="lead">{{ 'Update the details, rating and notes for this item.' if editing else 'Search online to fill in the details automatically, or enter them yourself.' }}</p>
+</div>
+
+{{ ui.form_errors(errors) }}
+
+<form id="item-form" method="post" action="{{ '/items/' ~ item.id ~ '/edit' if editing else '/items/new' }}" novalidate>
+  {{ ui.csrf_field() }}
+  <input type="hidden" name="external_source" id="external_source" value="{{ values.external_source or 'manual' }}">
+  <input type="hidden" name="external_id" id="external_id" value="{{ values.external_id or '' }}">
+  <input type="hidden" name="external_url" id="external_url" value="{{ values.external_url or '' }}">
+  <input type="hidden" name="keywords" id="keywords" value="{{ values.keywords or '' }}">
+
+  <div class="row g-4">
+    <div class="col-lg-8 d-grid gap-4">
+      {# metadata-lookup #}
+
+      <section class="curio-card curio-card-body" aria-labelledby="details-heading">
+        <h2 id="details-heading" class="h5 mb-3">Details</h2>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label" for="media_type">Type</label>
+            <select class="form-select{{ ui.invalid(errors, 'media_type') }}" id="media_type" name="media_type" required>
+              {% for key, meta in MEDIA_TYPES.items() %}
+              <option value="{{ key }}" data-creator-label="{{ meta.creator }}" {{ 'selected' if values.media_type == key }}>{{ meta.label }}</option>
+              {% endfor %}
+            </select>
+            {{ ui.field_error(errors, 'media_type') }}
+          </div>
+          <div class="col-md-8">
+            <label class="form-label" for="title">Title</label>
+            <input class="form-control{{ ui.invalid(errors, 'title') }}" id="title" name="title" type="text" maxlength="255" required
+                   value="{{ values.title or '' }}" placeholder="e.g. The Hobbit">
+            {{ ui.field_error(errors, 'title') }}
+          </div>
+          <div class="col-md-8">
+            <label class="form-label" for="creator"><span id="creator-label">{{ media_meta(values.media_type).creator }}</span></label>
+            <input class="form-control{{ ui.invalid(errors, 'creator') }}" id="creator" name="creator" type="text" maxlength="255"
+                   value="{{ values.creator or '' }}">
+            {{ ui.field_error(errors, 'creator') }}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="release_year">Year</label>
+            <input class="form-control{{ ui.invalid(errors, 'release_year') }}" id="release_year" name="release_year" type="number"
+                   min="1000" max="2100" inputmode="numeric" value="{{ values.release_year or '' }}">
+            {{ ui.field_error(errors, 'release_year') }}
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="genres">Genres</label>
+            <input class="form-control{{ ui.invalid(errors, 'genres') }}" id="genres" name="genres" type="text"
+                   value="{{ values.genres or '' }}" placeholder="e.g. Fantasy, Adventure" aria-describedby="genresHelp">
+            <div id="genresHelp" class="form-text">Separate genres with commas. Genres power your recommendations.</div>
+            {{ ui.field_error(errors, 'genres') }}
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="description">Description</label>
+            <textarea class="form-control{{ ui.invalid(errors, 'description') }}" id="description" name="description" rows="4"
+                      maxlength="5000" placeholder="What is it about?">{{ values.description or '' }}</textarea>
+            {{ ui.field_error(errors, 'description') }}
+          </div>
+        </div>
+      </section>
+
+      <section class="curio-card curio-card-body" aria-labelledby="personal-heading">
+        <h2 id="personal-heading" class="h5 mb-3">Make it yours</h2>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <span class="form-label d-block" id="rating-label">Your rating</span>
+            <div class="d-flex align-items-center gap-3">
+              <div class="star-input" id="rating-group" role="radiogroup" aria-labelledby="rating-label">
+                {% for v in [5, 4, 3, 2, 1] %}
+                <input type="radio" id="rating-{{ v }}" name="rating" value="{{ v }}" {{ 'checked' if values.rating|string == v|string }}>
+                <label for="rating-{{ v }}" title="{{ v }} star{{ 's' if v > 1 }}"><i class="bi bi-star-fill"></i><span class="visually-hidden">{{ v }} stars</span></label>
+                {% endfor %}
+              </div>
+              <input type="radio" class="d-none" id="rating-none" name="rating" value="" {{ 'checked' if not values.rating }}>
+              <a href="#" class="small" data-clear-rating="#item-form">Clear</a>
+            </div>
+            {{ ui.field_error(errors, 'rating') }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="status">Status</label>
+            <select class="form-select{{ ui.invalid(errors, 'status') }}" id="status" name="status">
+              {% for key, label in STATUSES.items() %}
+              <option value="{{ key }}" {{ 'selected' if (values.status or 'completed') == key }}>{{ label }}</option>
+              {% endfor %}
+            </select>
+            {{ ui.field_error(errors, 'status') }}
+          </div>
+          <div class="col-12">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" id="is_favourite" name="is_favourite" value="1" {{ 'checked' if values.is_favourite }}>
+              <label class="form-check-label" for="is_favourite"><i class="bi bi-heart-fill text-danger me-1"></i>Mark as a favourite</label>
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="tags">Tags</label>
+            <input class="form-control{{ ui.invalid(errors, 'tags') }}" id="tags" name="tags" type="text" list="known-tags"
+                   value="{{ values.tags or '' }}" placeholder="e.g. comfort read, rewatch, road trip" aria-describedby="tagsHelp">
+            <datalist id="known-tags">{% for tag in known_tags %}<option value="{{ tag }}">{% endfor %}</datalist>
+            <div id="tagsHelp" class="form-text">Personal labels separated by commas.{% if known_tags %} Existing: {{ known_tags[:8]|join(', ') }}{% endif %}</div>
+            {{ ui.field_error(errors, 'tags') }}
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="notes">Personal notes</label>
+            <textarea class="form-control{{ ui.invalid(errors, 'notes') }}" id="notes" name="notes" rows="4" maxlength="5000"
+                      placeholder="Why do you love it? Favourite quote, scene or lyric?">{{ values.notes or '' }}</textarea>
+            {{ ui.field_error(errors, 'notes') }}
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="col-lg-4 d-grid gap-4 align-content-start">
+      <section class="curio-card curio-card-body" aria-labelledby="cover-heading">
+        <h2 id="cover-heading" class="h5 mb-3">Cover image</h2>
+        <div id="image-preview" class="image-preview mx-auto mb-3 {{ 'd-none' if not values.image_url }}">
+          <div class="cover" data-type="{{ values.media_type or 'other' }}">
+            <div class="cover-placeholder"><i class="bi bi-image"></i></div>
+            <img class="position-absolute top-0 start-0 w-100 h-100 object-fit-cover" src="{{ values.image_url or '' }}" alt="Cover preview">
+          </div>
+        </div>
+        <label class="form-label" for="image_url">Image URL</label>
+        <input class="form-control{{ ui.invalid(errors, 'image_url') }}" id="image_url" name="image_url" type="url" maxlength="1000"
+               value="{{ values.image_url or '' }}" placeholder="https://…" data-image-preview="#image-preview">
+        <div class="form-text">Filled automatically when you pick a search result.</div>
+        {{ ui.field_error(errors, 'image_url') }}
+      </section>
+
+      <section class="curio-card curio-card-body" aria-labelledby="collections-heading">
+        <h2 id="collections-heading" class="h5 mb-3">Collections</h2>
+        {% if collections %}
+        <div class="d-grid gap-2">
+          {% for collection in collections %}
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="collection_ids" value="{{ collection.id }}" id="col-{{ collection.id }}"
+                   {{ 'checked' if collection.id in selected_collections }}>
+            <label class="form-check-label" for="col-{{ collection.id }}">{{ collection.name }}</label>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted small mb-2">You don't have any collections yet.</p>
+        <a class="small" href="/collections">Create a collection</a>
+        {% endif %}
+      </section>
+
+      <div class="d-grid gap-2">
+        <button class="btn btn-primary btn-lg" type="submit"><i class="bi bi-check2 me-1"></i>{{ 'Save changes' if editing else 'Add to library' }}</button>
+        <a class="btn btn-light-subtle" href="{{ '/items/' ~ item.id if editing else '/items' }}">Cancel</a>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Update the creator label ("Author", "Director", "Artist"…) when the type changes.
+  (function () {
+    var select = document.getElementById("media_type");
+    var label = document.getElementById("creator-label");
+    if (!select || !label) { return; }
+    select.addEventListener("change", function () {
+      var option = select.options[select.selectedIndex];
+      label.textContent = option.getAttribute("data-creator-label") || "Creator";
+    });
+  })();
+</script>
+{% endblock %}
