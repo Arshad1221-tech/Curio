@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui with context %}
+
+{% block title %}Dashboard · {{ app_name }}{% endblock %}
+
+{% block content %}
+{% set next_url = '/dashboard' %}
+<div class="page-header d-flex flex-wrap justify-content-between align-items-end gap-3">
+  <div>
+    <p class="eyebrow mb-1">Your dashboard</p>
+    <h1>Welcome back, {{ user.name }}</h1>
+    <p class="lead">Here’s your collection at a glance. <em>{{ tagline }}</em></p>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-primary" href="/items/new"><i class="bi bi-plus-lg me-1"></i>Add item</a>
+    <a class="btn btn-light-subtle" href="/recommendations"><i class="bi bi-compass me-1"></i>Discover</a>
+  </div>
+</div>
+
+{% if stats.total_items == 0 %}
+<div class="curio-card curio-card-body p-4 p-lg-5">
+  <div class="row g-4 align-items-center">
+    <div class="col-lg-5">
+      <div class="feature-icon"><i class="bi bi-stars"></i></div>
+      <h2 class="h3">Let’s start your collection</h2>
+      <p class="text-muted">Your dashboard fills up with statistics and personalised suggestions as you add things you love.</p>
+      <a class="btn btn-primary" href="/items/new">Add your first item</a>
+    </div>
+    <div class="col-lg-7 d-grid gap-3">
+      <div class="d-flex gap-3"><span class="step-number">1</span><div><strong>Add a favourite</strong><div class="text-muted small">Search TMDB, Google Books or iTunes and Curio fills in the details.</div></div></div>
+      <div class="d-flex gap-3"><span class="step-number">2</span><div><strong>Rate, tag and organise</strong><div class="text-muted small">Group items into collections like “Weekend watchlist”.</div></div></div>
+      <div class="d-flex gap-3"><span class="step-number">3</span><div><strong>Discover what’s next</strong><div class="text-muted small">Get recommendations ranked by your genres, tags and ratings.</div></div></div>
+    </div>
+  </div>
+</div>
+{% else %}
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <a class="curio-card stat-card text-decoration-none text-reset" href="/items">
+      <span class="stat-icon"><i class="bi bi-collection"></i></span>
+      <div><div class="stat-value">{{ stats.total_items }}</div><div class="stat-label">Items · {{ stats.added_last_30_days }} new this month</div></div>
+    </a>
+  </div>
+  <div class="col-6 col-lg-3">
+    <a class="curio-card stat-card text-decoration-none text-reset" href="/items?favourites=1">
+      <span class="stat-icon rose"><i class="bi bi-heart-fill"></i></span>
+      <div><div class="stat-value">{{ stats.favourites_count }}</div><div class="stat-label">Favourites</div></div>
+    </a>
+  </div>
+  <div class="col-6 col-lg-3">
+    <a class="curio-card stat-card text-decoration-none text-reset" href="/collections">
+      <span class="stat-icon teal"><i class="bi bi-folder2-open"></i></span>
+      <div><div class="stat-value">{{ stats.collections_count }}</div><div class="stat-label">Collections · {{ stats.shared_collections_count }} shared</div></div>
+    </a>
+  </div>
+  <div class="col-6 col-lg-3">
+    <a class="curio-card stat-card text-decoration-none text-reset" href="/items?sort=rating">
+      <span class="stat-icon amber"><i class="bi bi-star-fill"></i></span>
+      <div>
+        <div class="stat-value">{{ '%.1f'|format(stats.average_rating) if stats.average_rating is not none else '–' }}</div>
+        <div class="stat-label">Average rating · {{ stats.rated_count }} rated</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-4">
+    <section class="curio-card curio-card-body h-100" aria-labelledby="types-heading">
+      <h2 id="types-heading" class="section-title h5">By type</h2>
+      {% for key, meta in MEDIA_TYPES.items() %}
+        {% set count = stats.type_counts[key] %}
+        {% if count %}
+        <a class="bar-row text-decoration-none" href="/items?type={{ key }}">
+          <span class="bar-label"><i class="bi {{ meta.icon }} me-1"></i>{{ meta.plural }}</span>
+          <span class="bar-track" role="presentation"><span class="bar-fill d-block" style="width: {{ (100 * count / stats.max_type_count)|round(1) }}%"></span></span>
+          <span class="bar-value">{{ count }}</span>
+        </a>
+        {% endif %}
+      {% endfor %}
+    </section>
+  </div>
+  <div class="col-lg-4">
+    <section class="curio-card curio-card-body h-100" aria-labelledby="genres-heading">
+      <h2 id="genres-heading" class="section-title h5">Top genres</h2>
+      {% if stats.top_genres %}
+        {% for name, count in stats.top_genres %}
+        <a class="bar-row text-decoration-none" href="/items?genre={{ name|urlencode }}">
+          <span class="bar-label">{{ name }}</span>
+          <span class="bar-track" role="presentation"><span class="bar-fill amber d-block" style="width: {{ (100 * count / stats.max_genre_count)|round(1) }}%"></span></span>
+          <span class="bar-value">{{ count }}</span>
+        </a>
+        {% endfor %}
+      {% else %}
+      <p class="text-muted small mb-0">Add genres to your items to see your favourite genres here.</p>
+      {% endif %}
+    </section>
+  </div>
+  <div class="col-lg-4">
+    <section class="curio-card curio-card-body h-100" aria-labelledby="ratings-heading">
+      <h2 id="ratings-heading" class="section-title h5">Ratings</h2>
+      {% if stats.rated_count %}
+        {% for star, count in stats.rating_distribution.items() %}
+        <a class="bar-row text-decoration-none" href="/items?rating={{ star }}">
+          <span class="bar-label">{{ star }} <i class="bi bi-star-fill text-warning"></i></span>
+          <span class="bar-track" role="presentation"><span class="bar-fill d-block" style="width: {{ (100 * count / stats.max_rating_count)|round(1) if count else 0 }}%"></span></span>
+          <span class="bar-value">{{ count }}</span>
+        </a>
+        {% endfor %}
+      {% else %}
+      <p class="text-muted small mb-0">Rate items to see how your ratings are distributed.</p>
+      {% endif %}
+      <hr>
+      <div class="d-flex flex-wrap gap-2">
+        {% for key, label in STATUSES.items() %}
+        <a class="tag-pill" href="/items?status={{ key }}">{{ label }} <strong>{{ stats.status_counts[key] }}</strong></a>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <section class="curio-card curio-card-body h-100" aria-labelledby="recent-heading">
+      <h2 id="recent-heading" class="section-title h5">Recently added <a href="/items">View all</a></h2>
+      <ul class="mini-list">
+        {% for item in stats.recent_items %}
+        <li>
+          <div class="mini-cover">{{ ui.cover(item, mini=True) }}</div>
+          <div class="min-w-0 flex-grow-1">
+            <a class="mini-title d-block text-truncate" href="/items/{{ item.id }}">{{ item.title }}</a>
+            <div class="small text-muted text-truncate">{{ item.media_label }}{% if item.creator %} · {{ item.creator }}{% endif %} · {{ item.created_at|datefmt }}</div>
+          </div>
+          {% if item.is_favourite %}<i class="bi bi-heart-fill text-danger" title="Favourite"></i>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+  <div class="col-lg-6">
+    <section class="curio-card curio-card-body h-100" aria-labelledby="top-heading">
+      <h2 id="top-heading" class="section-title h5">Your top rated <a href="/items?sort=rating">See more</a></h2>
+      {% if stats.top_rated %}
+      <ul class="mini-list">
+        {% for item in stats.top_rated %}
+        <li>
+          <div class="mini-cover">{{ ui.cover(item, mini=True) }}</div>
+          <div class="min-w-0 flex-grow-1">
+            <a class="mini-title d-block text-truncate" href="/items/{{ item.id }}">{{ item.title }}</a>
+            <div class="small text-muted text-truncate">{{ item.media_label }}{% if item.release_year %} · {{ item.release_year }}{% endif %}</div>
+          </div>
+          {{ ui.stars(item.rating) }}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-muted small mb-0">You haven't rated anything yet. Open an item and give it a few stars!</p>
+      {% endif %}
+      {% if stats.top_tags %}
+      <h3 class="h6 mt-4 mb-2">Your tags</h3>
+      <div class="d-flex flex-wrap gap-2">
+        {% for name, count in stats.top_tags %}<a class="tag-pill" href="/items?tag={{ name|urlencode }}">#{{ name }} <span class="opacity-75">{{ count }}</span></a>{% endfor %}
+      </div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+
+{% if suggestions and suggestions.recommendations %}
+<section aria-labelledby="suggestions-heading">
+  <h2 id="suggestions-heading" class="section-title">
+    <span>{{ 'Starter picks for you' if suggestions.cold_start else 'Recommended for you' }}</span>
+    <a href="/recommendations">See all suggestions</a>
+  </h2>
+  <div class="item-grid">
+    {% for rec in suggestions.recommendations %}{% include "partials/_recommendation_card.html" %}{% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endif %}
+{% endblock %}
