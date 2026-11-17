@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui with context %}
+
+{% block title %}Your profile · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Your profile</h1>
+  <p class="lead">Manage your account details, password and data.</p>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="curio-card curio-card-body text-center">
+      <span class="avatar avatar-lg mb-3">{{ user.initials }}</span>
+      <h2 class="h4 mb-0">{{ user.name }}</h2>
+      <p class="text-muted mb-3">@{{ user.username }}</p>
+      {% if user.bio %}<p class="mb-3">{{ user.bio }}</p>{% endif %}
+      <div class="row g-2 text-center mb-3">
+        <div class="col-4"><div class="stat-value fs-4">{{ summary.item_count }}</div><div class="stat-label">Items</div></div>
+        <div class="col-4"><div class="stat-value fs-4">{{ summary.collection_count }}</div><div class="stat-label">Collections</div></div>
+        <div class="col-4"><div class="stat-value fs-4">{{ summary.favourite_count }}</div><div class="stat-label">Favourites</div></div>
+      </div>
+      <p class="small text-muted mb-0"><i class="bi bi-calendar3 me-1"></i>Member since {{ user.created_at|datefmt("%B %Y") }}</p>
+    </div>
+  </div>
+
+  <div class="col-lg-8 d-grid gap-4">
+    <section class="curio-card curio-card-body" aria-labelledby="details-heading">
+      <h2 id="details-heading" class="h5 mb-3">Profile details</h2>
+      {{ ui.form_errors(profile_errors) }}
+      <form method="post" action="/profile" novalidate>
+        {{ ui.csrf_field() }}
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" for="username">Username</label>
+            <input class="form-control" id="username" type="text" value="{{ user.username }}" disabled>
+            <div class="form-text">Usernames cannot be changed.</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="display_name">Display name</label>
+            <input class="form-control{{ ui.invalid(profile_errors, 'display_name') }}" id="display_name" name="display_name"
+                   type="text" maxlength="80" value="{{ values.display_name }}">
+            {{ ui.field_error(profile_errors, 'display_name') }}
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="email">Email</label>
+            <input class="form-control{{ ui.invalid(profile_errors, 'email') }}" id="email" name="email" type="email"
+                   maxlength="255" value="{{ values.email }}" required autocomplete="email">
+            {{ ui.field_error(profile_errors, 'email') }}
+          </div>
+          <div class="col-12">
+            <label class="form-label" for="bio">Bio</label>
+            <textarea class="form-control{{ ui.invalid(profile_errors, 'bio') }}" id="bio" name="bio" rows="3" maxlength="500"
+                      placeholder="A few words about what you love to read, watch and listen to.">{{ values.bio }}</textarea>
+            {{ ui.field_error(profile_errors, 'bio') }}
+          </div>
+        </div>
+        <div class="mt-3"><button class="btn btn-primary" type="submit">Save changes</button></div>
+      </form>
+    </section>
+
+    <section class="curio-card curio-card-body" aria-labelledby="password-heading">
+      <h2 id="password-heading" class="h5 mb-3">Change password</h2>
+      {{ ui.form_errors(password_errors) }}
+      <form method="post" action="/profile/password" novalidate>
+        {{ ui.csrf_field() }}
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label" for="current_password">Current password</label>
+            <input class="form-control{{ ui.invalid(password_errors, 'current_password') }}" id="current_password"
+                   name="current_password" type="password" autocomplete="current-password" required>
+            {{ ui.field_error(password_errors, 'current_password') }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="new_password">New password</label>
+            <input class="form-control{{ ui.invalid(password_errors, 'new_password') }}" id="new_password" name="new_password"
+                   type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+            {{ ui.field_error(password_errors, 'new_password') }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" for="confirm_password">Confirm new password</label>
+            <input class="form-control{{ ui.invalid(password_errors, 'confirm_password') }}" id="confirm_password"
+                   name="confirm_password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+            {{ ui.field_error(password_errors, 'confirm_password') }}
+          </div>
+        </div>
+        <div class="mt-3"><button class="btn btn-primary" type="submit">Update password</button></div>
+      </form>
+    </section>
+
+    <section class="curio-card curio-card-body border-danger-subtle" aria-labelledby="danger-heading">
+      <h2 id="danger-heading" class="h5 text-danger mb-1">Delete account</h2>
+      <p class="text-muted">This permanently removes your account, items, tags, collections and share links. It cannot be undone.</p>
+      {{ ui.form_errors(delete_errors) }}
+      <form method="post" action="/profile/delete" class="row g-2 align-items-end"
+            data-confirm="Delete your Curio account and all of its data permanently?">
+        {{ ui.csrf_field() }}
+        <div class="col-sm-8">
+          <label class="form-label" for="delete_password">Confirm with your password</label>
+          <input class="form-control{{ ui.invalid(delete_errors, 'delete_password') }}" id="delete_password" name="delete_password"
+                 type="password" autocomplete="current-password" required>
+        </div>
+        <div class="col-sm-4"><button class="btn btn-outline-danger w-100" type="submit">Delete account</button></div>
+        <div class="col-12">{{ ui.field_error(delete_errors, 'delete_password') }}</div>
+      </form>
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -17,12 +17,15 @@ from app import __version__
 from app.config import STATIC_DIR, get_settings
 from app.core.errors import register_exception_handlers
 from app.database import init_db
-from app.routers import pages
+from app.routers import auth, pages, profile
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s [%(name)s] %(message)s")
 
 ROUTERS = [
     pages.router,
+    auth.router,
+    profile.router,
+    profile.api_router,
 ]
 
 

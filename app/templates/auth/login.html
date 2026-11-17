@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% import "partials/_macros.html" as ui with context %}
+
+{% block title %}Log in · {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="text-center mb-4">
+    <div class="auth-brand">{{ app_name }}</div>
+    <p class="text-muted fst-italic mb-0">{{ tagline }}</p>
+  </div>
+  <div class="curio-card auth-card">
+    <h1 class="h3 mb-1">Welcome back</h1>
+    <p class="text-muted mb-4">Log in to see your collections and recommendations.</p>
+
+    {{ ui.form_errors(errors) }}
+
+    <form method="post" action="/login" novalidate>
+      {{ ui.csrf_field() }}
+      <input type="hidden" name="next" value="{{ next_url }}">
+      <div class="mb-3">
+        <label class="form-label" for="identifier">Username or email</label>
+        <input class="form-control{{ ' is-invalid' if errors }}" id="identifier" name="identifier" type="text"
+               value="{{ values.identifier or '' }}" autocomplete="username" required autofocus>
+      </div>
+      <div class="mb-4">
+        <label class="form-label" for="password">Password</label>
+        <input class="form-control{{ ' is-invalid' if errors }}" id="password" name="password" type="password"
+               autocomplete="current-password" required>
+      </div>
+      <button class="btn btn-primary w-100 py-2" type="submit">Log in</button>
+    </form>
+  </div>
+  <p class="text-center text-muted mt-4">New to {{ app_name }}? <a href="/register">Create an account</a></p>
+</div>
+{% endblock %}
