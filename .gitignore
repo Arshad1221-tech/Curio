@@ -19,7 +19,8 @@ env/
 !.env.example
 
 # --- Local database and generated files ---------------------------------
-data/
+# Only the root-level data/ folder (SQLite database); app/data/ is source.
+/data/
 *.db
 *.sqlite3
 exports/
